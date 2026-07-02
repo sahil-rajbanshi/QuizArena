@@ -1,3 +1,4 @@
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 # 🧠 QuizArena
 
 A full-stack gamified MCQ quiz platform. Users browse topics, take timed quizzes, and track their progress. Admins manage the full question bank through a dedicated panel.
