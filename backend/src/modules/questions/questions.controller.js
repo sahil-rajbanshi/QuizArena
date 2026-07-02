@@ -12,6 +12,11 @@ export const getAllQuestions = asyncHandler(async (req, res) => {
 export const getQuestionById = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const question = await questionService.getQuestionById(id);
+  const isAdmin = req.user?.role === 'admin';
+  if (!isAdmin) {
+    question.options = question.options.map(({ is_correct, ...rest }) => rest);
+  }
+
   return successResponse(res, question);
 });
 

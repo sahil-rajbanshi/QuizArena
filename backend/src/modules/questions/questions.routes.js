@@ -8,6 +8,7 @@ import {
   deleteQuestion
 } from './questions.controller.js';
 import auth from '../../middlewares/auth.js';
+import optionalAuth from '../../middlewares/optionalAuth.js';
 import isAdmin from '../../middlewares/isAdmin.js';
 import validate from '../../middlewares/validate.js';
 
@@ -30,7 +31,7 @@ const updateQuestionSchema = z.object({
 });
 
 router.get('/', getAllQuestions);
-router.get('/:id', getQuestionById);
+router.get('/:id', optionalAuth, getQuestionById);
 router.post('/', auth, isAdmin, validate(createQuestionSchema), createQuestion);
 router.put('/:id', auth, isAdmin, validate(updateQuestionSchema), updateQuestion);
 router.delete('/:id', auth, isAdmin, deleteQuestion);
