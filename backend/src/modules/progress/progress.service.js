@@ -2,26 +2,26 @@
 import { query } from '../../config/db.js';
 
 export async function saveAnswer(user_id, question_id, selected_option_id) {
-  // Check if selected option is correct
   const optionResult = await query(
-    'SELECT is_correct FROM options WHERE id = $1 AND question_id = $2',
-    [selected_option_id, question_id]
+    'SELECT id, is_correct FROM options WHERE question_id = $1 AND (id = $2 OR is_correct = true)',
+    [question_id, selected_option_id]
   );
-  if (optionResult.rows.length === 0) {
+  const submitted = optionResult.rows.find(r => r.id === selected_option_id);
+  if (!submitted) {
     const error = new Error('Invalid option for this question');
     error.statusCode = 400;
     throw error;
   }
-  const is_correct = optionResult.rows[0].is_correct;
+  const is_correct = submitted.is_correct;
+  const correct_option_id = (optionResult.rows.find(r => r.is_correct) || submitted).id;
 
-  // Insert progress record
   const result = await query(
     `INSERT INTO progress (user_id, question_id, selected_option_id, is_correct)
      VALUES ($1, $2, $3, $4)
      RETURNING *`,
     [user_id, question_id, selected_option_id, is_correct]
   );
-  return result.rows[0];
+  return { ...result.rows[0], correct_option_id };
 }
 
 export async function getUserProgress(user_id) {

@@ -463,6 +463,7 @@ const QuizSession = () => {
   const [correctCount, setCorrectCount]   = useState(0);
   const [wrongCount, setWrongCount]       = useState(0);
   const [skippedCount, setSkippedCount]   = useState(0);
+  const [answerResult, setAnswerResult]   = useState(null);
 
   // Refs — never go stale inside closures
   const questionIdsRef  = useRef([]);
@@ -555,6 +556,7 @@ const QuizSession = () => {
     setCurrentQuestion(null);
     setAnswered(false);
     setSelectedId(null);
+    setAnswerResult(null);
     answeredRef.current = false;
     try {
       const res = await getQuestionById(id);
@@ -605,6 +607,7 @@ const QuizSession = () => {
       setCurrentQuestion(null);
       setAnswered(false);
       setSelectedId(null);
+      setAnswerResult(null);
       setScreen("quiz");
       await loadQuestion(ids[0]);
     } catch (e) {
@@ -616,18 +619,24 @@ const QuizSession = () => {
 
   // ── Answer ────────────────────────────────────────────────────────────────
   const handleAnswer = (optId) => {
-    if (answeredRef.current || !currentQuestion) return;
-    stopTimer();
-    answeredRef.current = true;
-    setAnswered(true);
-    setSelectedId(optId);
-    const opt = currentQuestion.options.find(o => o.id === optId);
-    if (opt?.is_correct) setCorrectCount(c => c + 1);
-    else setWrongCount(c => c + 1);
-    saveAnswer({ question_id: currentQuestion.id, selected_option_id: optId })
-      .catch(console.error);
-    scheduleAdvance();
-  };
+  if (answeredRef.current || !currentQuestion) return;
+  stopTimer();
+  answeredRef.current = true;
+  setAnswered(true);
+  setSelectedId(optId);
+  saveAnswer({ question_id: currentQuestion.id, selected_option_id: optId })
+    .then(res => {
+      const result = res?.data;
+      setAnswerResult(result || null);
+      if (result?.is_correct) setCorrectCount(c => c + 1);
+      else setWrongCount(c => c + 1);
+    })
+    .catch(e => {
+      console.error("saveAnswer:", e);
+      setWrongCount(c => c + 1);
+    });
+  scheduleAdvance();
+};
 
   // ── Play again ────────────────────────────────────────────────────────────
   const handlePlayAgain = () => {
@@ -646,6 +655,7 @@ const QuizSession = () => {
     setSkippedCount(0);
     setAnswered(false);
     setSelectedId(null);
+    setAnswerResult(null);
     setTimer(30);
   };
 
@@ -765,8 +775,8 @@ const QuizSession = () => {
                 <OptionsList>
                   {currentQuestion.options.map((opt, i) => {
                     const isSelected  = selectedId === opt.id;
-                    const showCorrect = answered && opt.is_correct;
-                    const showWrong   = answered && isSelected && !opt.is_correct;
+                    const showCorrect = answered && answerResult != null && opt.id === answerResult.correct_option_id;
+                    const showWrong   = answered && isSelected && answerResult != null && !answerResult.is_correct;
                     return (
                       <OptionBtn
                         key={opt.id}
