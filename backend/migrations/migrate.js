@@ -14,6 +14,19 @@ const migrations = [
   )
   `,
 
+  // Refresh tokens table
+  `
+  CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+  )
+  `,
+
+  // Index for token lookups on refresh/logout — table has none currently
+  `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`,
+
   // Topics table
   `
   CREATE TABLE IF NOT EXISTS topics (
